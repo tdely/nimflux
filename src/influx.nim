@@ -64,8 +64,8 @@ func toInfluxStatus(code: HttpCode): InfluxStatus =
   else:
     UnknownError
 
-proc addBasicAuth*(i: InfluxClient, user: string, pwd: string) {.cov.} =
-  ## Use BasicAuth.
+proc setBasicAuth*(i: InfluxClient, user: string, pwd: string) {.cov.} =
+  ## Use Basic authentication.
   i.auth = "Basic " & encode(user & ":" & pwd)
 
 proc addField*(l: DataPoint, name: string, value: string) {.cov.} =
