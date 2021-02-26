@@ -19,7 +19,7 @@ type
     fields*: Table[string, string]
     timestamp*: int64
 
-  InfluxStatus* = enum
+  InfluxStatus* {.pure.} = enum
     Ok,
     BadRequest,
     Unauthorized,
@@ -29,7 +29,7 @@ type
     UnknownError
 
 func newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
-    timeout = -1): InfluxClient =
+                      timeout = -1): InfluxClient =
   ## Create a new InfluxClient instance for communicating with the InfluxDB API.
   ##
   ## ``host`` specifies the host to target.
@@ -43,7 +43,7 @@ func newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
   ## ``timeout`` specifies the number of milliseconds to allow before a
   ## ``TimeoutError`` is raised.
   InfluxClient(host: host, port: port, database: database, ssl: ssl,
-      timeout: timeout)
+               timeout: timeout)
 
 func toInfluxStatus(code: HttpCode): InfluxStatus =
   if is2xx(code):
@@ -106,8 +106,8 @@ func `$`*(l: DataPoint): string =
     result.add(" " & $l.timestamp)
 
 proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
-    data = "", queryString: seq[(string, string)] = @[]): (Response,
-        InfluxStatus) {.cov.} =
+              data = "", queryString: seq[(string, string)] = @[]):
+              (Response, InfluxStatus) {.cov.} =
   ## Send request to Influx using connection values from InfluxClient directed
   ## at the specified InfluxDB API ``endpoint`` using the method specified by
   ## ``httpMethod``.
@@ -132,8 +132,8 @@ proc ping*(i: InfluxClient): InfluxStatus =
   i.request("/ping", HttpGet)[1]
 
 proc query*(i: InfluxClient, q: string, database = "", chunked = false,
-    chunkSize = 10000, epoch = "ns", pretty = false): (Response,
-        InfluxStatus) {.cov.} =
+            chunkSize = 10000, epoch = "ns", pretty = false):
+            (Response, InfluxStatus) {.cov.} =
   ## Query InfluxDB using InfluxQL. HTTP method is automatically determined by
   ## the query type in ``q``.
   ##
@@ -166,8 +166,8 @@ proc query*(i: InfluxClient, q: string, database = "", chunked = false,
     meth = HttpPost
   i.request("/query", meth, queryString = querySeq)
 
-proc write*(i: InfluxClient, data: string, database: string): (Response,
-    InfluxStatus) {.cov.} =
+proc write*(i: InfluxClient, data: string, database: string):
+            (Response, InfluxStatus) {.cov.} =
   ## Write data points to InfluxDB using Line Protocol.
   var db: string
   if database != "":
@@ -180,6 +180,6 @@ proc write*(i: InfluxClient, data: seq[DataPoint],
     database = ""): (Response, InfluxStatus) =
   i.write(data.join("\n"), database)
 
-proc write*(i: InfluxClient, data: DataPoint, database = ""): (Response,
-    InfluxStatus) =
+proc write*(i: InfluxClient, data: DataPoint, database = ""):
+            (Response, InfluxStatus) =
   i.write($data, database)
