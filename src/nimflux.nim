@@ -127,9 +127,9 @@ proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
   let r = client.post($hostUri, data)
   (r, r.code.toInfluxStatus())
 
-proc ping*(i: InfluxClient): InfluxStatus =
+proc ping*(i: InfluxClient): (Response, InfluxStatus) =
   ## Ping InfluxDB to check instance status.
-  i.request("/ping", HttpGet)[1]
+  i.request("/ping", HttpGet)
 
 proc query*(i: InfluxClient, q: string, database = "", chunked = false,
             chunkSize = 10000, epoch = "ns", pretty = false):
