@@ -7,6 +7,12 @@ import nimflux
 
 suite "DataPoint":
 
+  test "addTag":
+    let point = DataPoint()
+    point.addTag("tag", "hello!")
+    check point.tags.hasKey("tag") == true
+    check point.tags["tag"] == "\"hello!\""
+
   test "addField string":
     let point = DataPoint()
     point.addField("fieldStr", "hello!")

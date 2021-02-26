@@ -72,6 +72,10 @@ proc setTokenAuth*(i: InfluxClient, token: string) {.cov.} =
   ## Use Token authentication.
   i.auth = "Token " & token
 
+proc addTag*(l: DataPoint, name: string, value: string) {.cov.} =
+  ## Add a measurement tag.
+  l.tags[name] = "\"" & value & "\""
+
 proc addField*(l: DataPoint, name: string, value: string) {.cov.} =
   ## Add a measurement field.
   l.fields[name] = "\"" & value & "\""
