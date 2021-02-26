@@ -1,3 +1,25 @@
+# Copyright (c) 2021 Tobias Dély
+#
+# This software is licensed under the MIT license.
+# See the file "LICENSE", included in this distribution, for details about the
+# copyright.
+
+## This module implements an InfluxDB API client.
+##
+## .. code-block:: Nim
+##   import nimflux
+##
+##   var data = DataPoint(measurement: "temp")
+##   data.addTag("loc", "home")
+##   data.addField("ambient", 22.0)
+##
+##   var client = InfluxClient("localhost", "nimtest")
+##   var (resp, status) = client.write(data)
+##   assert status == Ok
+##   (resp, status) = client.query("select * from temp")
+##   echo resp.body
+##
+
 {.experimental: "strictFuncs".}
 import base64, hashes, httpclient, httpcore, strutils, tables, uri
 
