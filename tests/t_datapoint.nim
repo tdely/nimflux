@@ -3,7 +3,7 @@ import tables
 
 import coverage
 
-import influx
+import nimflux
 
 suite "DataPoint":
 
