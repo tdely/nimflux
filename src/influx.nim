@@ -68,6 +68,10 @@ proc setBasicAuth*(i: InfluxClient, user: string, pwd: string) {.cov.} =
   ## Use Basic authentication.
   i.auth = "Basic " & encode(user & ":" & pwd)
 
+proc setTokenAuth*(i: InfluxClient, token: string) {.cov.} =
+  ## Use Token authentication.
+  i.auth = "Token " & token
+
 proc addField*(l: DataPoint, name: string, value: string) {.cov.} =
   ## Add a measurement field.
   l.fields[name] = "\"" & value & "\""
