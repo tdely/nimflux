@@ -162,20 +162,20 @@ proc query*(i: InfluxClient, q: string, database = "", chunked = false,
     meth = HttpPost
   i.request("/query", meth, queryString = querySeq)
 
-proc write*(i: InfluxClient, data: string, database: string): InfluxStatus {.cov.} =
+proc write*(i: InfluxClient, data: string, database: string): (Response,
+    InfluxStatus) {.cov.} =
   ## Write data points to InfluxDB using Line Protocol.
   var db: string
   if database != "":
     db = database
   elif i.database != "":
     db = i.database
-  else:
-    return BadRequest
-  i.request("/write", HttpPost, data, @[("db", db)])[1]
+  i.request("/write", HttpPost, data, @[("db", db)])
 
 proc write*(i: InfluxClient, data: seq[DataPoint],
-    database = ""): InfluxStatus =
+    database = ""): (Response, InfluxStatus) =
   i.write(data.join("\n"), database)
 
-proc write*(i: InfluxClient, data: DataPoint, database = ""): InfluxStatus =
+proc write*(i: InfluxClient, data: DataPoint, database = ""): (Response,
+    InfluxStatus) =
   i.write($data, database)
