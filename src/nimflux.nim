@@ -23,8 +23,6 @@
 {.experimental: "strictFuncs".}
 import base64, hashes, httpclient, httpcore, strutils, tables, uri
 
-import coverage
-
 type
   InfluxClient* = ref object
     host*: string
@@ -86,29 +84,29 @@ func toInfluxStatus(code: HttpCode): InfluxStatus =
   else:
     UnknownError
 
-proc setBasicAuth*(i: InfluxClient, user: string, pwd: string) {.cov.} =
+proc setBasicAuth*(i: InfluxClient, user: string, pwd: string) =
   ## Use Basic authentication.
   i.auth = "Basic " & encode(user & ":" & pwd)
 
-proc setTokenAuth*(i: InfluxClient, token: string) {.cov.} =
+proc setTokenAuth*(i: InfluxClient, token: string) =
   ## Use Token authentication.
   i.auth = "Token " & token
 
-proc addTag*(l: DataPoint, name: string, value: string) {.cov.} =
+proc addTag*(l: DataPoint, name: string, value: string) =
   ## Add a measurement tag.
   l.tags[name] = "\"" & value & "\""
 
-proc addField*(l: DataPoint, name: string, value: string) {.cov.} =
+proc addField*(l: DataPoint, name: string, value: string) =
   ## Add a measurement field.
   l.fields[name] = "\"" & value & "\""
 
-proc addField*(l: DataPoint, name: string, value: int) {.cov.} =
+proc addField*(l: DataPoint, name: string, value: int) =
   l.fields[name] = $value & "i"
 
-proc addField*(l: DataPoint, name: string, value: float) {.cov.} =
+proc addField*(l: DataPoint, name: string, value: float) =
   l.fields[name] = $value
 
-proc addField*(l: DataPoint, name: string, value: bool) {.cov.} =
+proc addField*(l: DataPoint, name: string, value: bool) =
   l.fields[name] = case value:
     of true:
       "t"
@@ -129,7 +127,7 @@ func `$`*(l: DataPoint): string =
 
 proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
               data = "", queryString: seq[(string, string)] = @[]):
-              (Response, InfluxStatus) {.cov.} =
+              (Response, InfluxStatus) =
   ## Send request to Influx using connection values from InfluxClient directed
   ## at the specified InfluxDB API ``endpoint`` using the method specified by
   ## ``httpMethod``.
@@ -155,7 +153,7 @@ proc ping*(i: InfluxClient): (Response, InfluxStatus) =
 
 proc query*(i: InfluxClient, q: string, database = "", chunked = false,
             chunkSize = 10000, epoch = "ns", pretty = false):
-            (Response, InfluxStatus) {.cov.} =
+            (Response, InfluxStatus) =
   ## Query InfluxDB using InfluxQL. HTTP method is automatically determined by
   ## the query type in ``q``.
   ##
@@ -189,7 +187,7 @@ proc query*(i: InfluxClient, q: string, database = "", chunked = false,
   i.request("/query", meth, queryString = querySeq)
 
 proc write*(i: InfluxClient, data: string, database: string = ""):
-            (Response, InfluxStatus) {.cov.} =
+            (Response, InfluxStatus) =
   ## Write data points to InfluxDB using Line Protocol.
   var db: string
   if database != "":
