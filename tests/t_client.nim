@@ -4,7 +4,8 @@ import httpclient
 import nimflux
 
 suite "InfluxClient":
-  var client = newInfluxClient("localhost", "nimtest")
+  var client = newInfluxClient("localhost", "nimflux")
+  client.addBasicAuth("nimflux", "nimflux")
 
   test "ping":
     var (resp, status) = client.ping()

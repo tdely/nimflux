@@ -7,7 +7,7 @@ variables:
   DOCKER_INFLUXDB_INIT_USERNAME: nimflux
   DOCKER_INFLUXDB_INIT_PASSWORD: nimflux
   DOCKER_INFLUXDB_INIT_ORG: nimflux
-  DOCKER_INFLUXDB_INIT_BUCKET: nimtest
+  DOCKER_INFLUXDB_INIT_BUCKET: nimflux
 
 
 cache:
@@ -31,6 +31,7 @@ tests:
   script:
     - nimble test -y > tests.log
   artifacts:
+    when: always
     paths:
       - tests.log
 
