@@ -4,6 +4,10 @@ variables:
   XDG_CACHE_HOME: ${CI_PROJECT_DIR}/.cache
   NIMBLE_DIR: ${CI_PROJECT_DIR}/.nimble
   PROJECT: nimflux
+  DOCKER_INFLUXDB_INIT_USERNAME: nimflux
+  DOCKER_INFLUXDB_INIT_PASSWORD: nimflux
+  DOCKER_INFLUXDB_INIT_ORG: nimflux
+  DOCKER_INFLUXDB_INIT_BUCKET: nimtest
 
 
 cache:
@@ -21,8 +25,9 @@ before_script:
   - export PATH="${PATH}:${NIMBLE_DIR}/bin"
   - mkdir -p ${NIMBLE_DIR} ${XDG_CACHE_HOME}
 
-unit_tests:
-  stage: test
+tests:
+  services:
+    - influxdb:1.8
   script:
     - nimble test -y > tests.log
   artifacts:
