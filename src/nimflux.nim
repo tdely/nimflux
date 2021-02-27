@@ -146,7 +146,7 @@ proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
   client.headers = newHttpHeaders()
   if i.auth != "":
     client.headers["Authorization"] = i.auth
-  let r = client.post($hostUri, data)
+  let r = client.request($hostUri, httpMethod, data)
   (r, r.code.toInfluxStatus())
 
 proc ping*(i: InfluxClient): (Response, InfluxStatus) =
