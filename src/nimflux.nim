@@ -146,7 +146,7 @@ proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
   client.headers = newHttpHeaders()
   if i.auth != "":
     client.headers["Authorization"] = i.auth
-  let r = client.post($hostUri, data)
+  let r = client.request($hostUri, httpMethod, data)
   (r, r.code.toInfluxStatus())
 
 proc ping*(i: InfluxClient): (Response, InfluxStatus) =
@@ -188,7 +188,7 @@ proc query*(i: InfluxClient, q: string, database = "", chunked = false,
     meth = HttpPost
   i.request("/query", meth, queryString = querySeq)
 
-proc write*(i: InfluxClient, data: string, database: string):
+proc write*(i: InfluxClient, data: string, database: string = ""):
             (Response, InfluxStatus) {.cov.} =
   ## Write data points to InfluxDB using Line Protocol.
   var db: string
