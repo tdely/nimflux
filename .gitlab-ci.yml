@@ -29,7 +29,7 @@ tests:
   services:
     - influxdb:1.8
   script:
-    - nimble test -y > tests.log
+    - nimble test -y &> tests.log
   artifacts:
     when: always
     paths:

@@ -5,7 +5,7 @@ import nimflux
 
 suite "InfluxClient":
   var client = newInfluxClient("localhost", "nimflux")
-  client.addBasicAuth("nimflux", "nimflux")
+  client.setBasicAuth("nimflux", "nimflux")
 
   test "ping":
     var (resp, status) = client.ping()
