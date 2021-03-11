@@ -144,8 +144,11 @@ proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
   client.headers = newHttpHeaders()
   if i.auth != "":
     client.headers["Authorization"] = i.auth
-  let r = client.request($hostUri, httpMethod, data)
-  (r, r.code.toInfluxStatus())
+  try:
+    let r = client.request($hostUri, httpMethod, data)
+    (r, r.code.toInfluxStatus())
+  finally:
+    client.close()
 
 proc ping*(i: InfluxClient): (Response, InfluxStatus) =
   ## Ping InfluxDB to check instance status.
