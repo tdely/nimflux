@@ -1,6 +1,15 @@
 Changes
 =======
 
+[0.1.2] - 2021-03-11
+--------------------
+
+### Changed
+
+* Fixed socket fd leaking due to not closing httpClient after requests. Leaking
+  will still occurr on failed connections due to an upstream bug, see:
+  https://github.com/nim-lang/Nim/issues/12381
+
 [0.1.1] - 2021-03-01
 --------------------
 
