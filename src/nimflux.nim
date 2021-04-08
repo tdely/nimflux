@@ -48,6 +48,17 @@ type
     ServerError,
     UnknownError
 
+func `$`*(i: InfluxClient): string =
+  var hostUri = initUri()
+  if i.ssl:
+    hostUri.scheme = "https"
+  else:
+    hostUri.scheme = "http"
+  hostUri.hostname = i.host
+  hostUri.port = $i.port
+  hostUri.query = encodeQuery(@[("db", i.database)])
+  $hostUri
+
 func newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
                       timeout = -1): InfluxClient =
   ## Create a new InfluxClient instance for communicating with the InfluxDB API.
