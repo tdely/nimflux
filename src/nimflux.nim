@@ -21,16 +21,21 @@
 ##
 
 {.experimental: "strictFuncs".}
-import base64, hashes, httpclient, httpcore, strutils, tables, uri
+import asyncdispatch, base64, hashes, httpclient, httpcore, strutils, tables,
+       uri
 
 type
-  InfluxClient* = ref object
+  InfluxClientBase*[ClientType] = ref object
+    httpClient: ClientType
     host*: string
     port*: int
     ssl*: bool
     database*: string
     auth: string
-    timeout*: int
+
+  InfluxClient* = InfluxClientBase[HttpClient]
+
+  AsyncInfluxClient* = InfluxClientBase[AsyncHttpClient]
 
   DataPoint* = ref object
     ## Representation of a single Influx data point.
@@ -59,7 +64,7 @@ func `$`*(i: InfluxClient): string =
   hostUri.query = encodeQuery(@[("db", i.database)])
   $hostUri
 
-func newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
+proc newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
                       timeout = -1): InfluxClient =
   ## Create a new InfluxClient instance for communicating with the InfluxDB API.
   ##
@@ -73,10 +78,41 @@ func newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
   ##
   ## ``timeout`` specifies the number of milliseconds to allow before a
   ## ``TimeoutError`` is raised.
-  InfluxClient(host: host, port: port, database: database, ssl: ssl,
-               timeout: timeout)
+  new result
+  result.host = host
+  result.port = port
+  result.database = database
+  result.ssl = ssl
+  result.httpClient = newHttpClient(timeout = timeout)
 
-func toInfluxStatus(code: HttpCode): InfluxStatus =
+proc newAsyncInfluxClient*(host: string, database: string, port = 8086,
+                           ssl = false): AsyncInfluxClient =
+  ## Create a new AsyncInfluxClient instance for communicating with the
+  ## InfluxDB API.
+  ##
+  ## ``host`` specifies the host to target.
+  ##
+  ## ``database`` specifies the default InfluxDB database to target.
+  ##
+  ## ``port`` specifies the port to target.
+  ##
+  ## ``ssl`` specifies the use of HTTPS communication.
+  ##
+  ## ``timeout`` specifies the number of milliseconds to allow before a
+  ## ``TimeoutError`` is raised.
+  new result
+  result.host = host
+  result.port = port
+  result.database = database
+  result.ssl = ssl
+  result.httpClient = newAsyncHttpClient()
+
+func close*(i: InfluxClient | AsyncInfluxClient) =
+  ## Close any HTTP connection used by the Influx client.
+  i.httpClient.close()
+
+func toInfluxStatus*(code: HttpCode): InfluxStatus =
+  ## Get InfluxStatus from HTTP response code.
   if is2xx(code):
     OK
   elif is4xx(code):
@@ -136,10 +172,11 @@ func `$`*(l: DataPoint): string =
   if l.timestamp != 0:
     result.add(" " & $l.timestamp)
 
-proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
-              data = "", queryString: seq[(string, string)] = @[]):
-              (Response, InfluxStatus) =
-  ## Send request to Influx using connection values from InfluxClient directed
+proc request*(i: InfluxClient | AsyncInfluxClient, endpoint: string,
+              httpMethod = HttpGet, data = "",
+              queryString: seq[(string, string)] = @[]):
+              Future[Response | AsyncResponse] {.multisync.} =
+  ## Send request to Influx using connection values from `client` directed
   ## at the specified InfluxDB API ``endpoint`` using the method specified by
   ## ``httpMethod``.
   var hostUri = initUri()
@@ -151,23 +188,19 @@ proc request*(i: InfluxClient, endpoint: string, httpMethod = HttpGet,
   hostUri.port = $i.port
   hostUri.path = endpoint
   hostUri.query = encodeQuery(queryString)
-  let client = newHttpClient(timeout = i.timeout)
-  client.headers = newHttpHeaders()
+  i.httpClient.headers = newHttpHeaders()
   if i.auth != "":
-    client.headers["Authorization"] = i.auth
-  try:
-    let r = client.request($hostUri, httpMethod, data)
-    (r, r.code.toInfluxStatus())
-  finally:
-    client.close()
+    i.httpClient.headers["Authorization"] = i.auth
+  return await i.httpClient.request($hostUri, httpMethod, data)
 
-proc ping*(i: InfluxClient): (Response, InfluxStatus) =
+proc ping*(i: InfluxClient | AsyncInfluxClient):
+           Future[Response | AsyncResponse] {.multisync.} =
   ## Ping InfluxDB to check instance status.
-  i.request("/ping", HttpGet)
+  return await i.request("/ping", HttpGet)
 
-proc query*(i: InfluxClient, q: string, database = "", chunked = false,
-            chunkSize = 10000, epoch = "ns", pretty = false):
-            (Response, InfluxStatus) =
+proc query*(i: InfluxClient | AsyncInfluxClient, q: string, database = "",
+            chunked = false, chunkSize = 10000, epoch = "ns", pretty = false):
+            Future[Response | AsyncResponse] {.multisync.} =
   ## Query InfluxDB using InfluxQL. HTTP method is automatically determined by
   ## the query type in ``q``.
   ##
@@ -198,22 +231,23 @@ proc query*(i: InfluxClient, q: string, database = "", chunked = false,
     meth = HttpGet
   else:
     meth = HttpPost
-  i.request("/query", meth, queryString = querySeq)
+  return await i.request("/query", meth, queryString = querySeq)
 
-proc write*(i: InfluxClient, data: string, database: string = ""):
-            (Response, InfluxStatus) =
+proc write*(i: InfluxClient | AsyncInfluxClient, data: string,
+            database: string = ""): Future[Response | AsyncResponse]
+            {.multisync.} =
   ## Write data points to InfluxDB using Line Protocol.
   var db: string
   if database != "":
     db = database
   elif i.database != "":
     db = i.database
-  i.request("/write", HttpPost, data, @[("db", db)])
+  return await i.request("/write", HttpPost, data, @[("db", db)])
 
-proc write*(i: InfluxClient, data: seq[DataPoint],
-    database = ""): (Response, InfluxStatus) =
-  i.write(data.join("\n"), database)
+proc write*(i: InfluxClient | AsyncInfluxClient, data: seq[DataPoint],
+            database = ""): Future[Response | AsyncResponse] {.multisync.} =
+  return await i.write(data.join("\n"), database)
 
-proc write*(i: InfluxClient, data: DataPoint, database = ""):
-            (Response, InfluxStatus) =
-  i.write($data, database)
+proc write*(i: InfluxClient | AsyncInfluxClient, data: DataPoint,
+            database = ""): Future[Response | AsyncResponse] {.multisync.} =
+  return await i.write($data, database)
