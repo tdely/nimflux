@@ -55,15 +55,15 @@ type
     ServerError,
     UnknownError
 
-func `$`*(i: InfluxClient): string =
+func `$`*(client: InfluxClient): string =
   var hostUri = initUri()
-  if i.ssl:
+  if client.ssl:
     hostUri.scheme = "https"
   else:
     hostUri.scheme = "http"
-  hostUri.hostname = i.host
-  hostUri.port = $i.port
-  hostUri.query = encodeQuery(@[("db", i.database)])
+  hostUri.hostname = client.host
+  hostUri.port = $client.port
+  hostUri.query = encodeQuery(@[("db", client.database)])
   $hostUri
 
 proc newInfluxClient*(host: string, database: string, port = 8086,
