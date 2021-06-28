@@ -107,9 +107,9 @@ proc newAsyncInfluxClient*(host: string, database: string, port = 8086,
   result.ssl = ssl
   result.httpClient = newAsyncHttpClient()
 
-func close*(i: InfluxClient | AsyncInfluxClient) =
-  ## Close any HTTP connection used by the Influx client.
-  i.httpClient.close()
+func close*(client: InfluxClient | AsyncInfluxClient) =
+  ## Close any HTTP connection used by the ``client``.
+  client.httpClient.close()
 
 func toInfluxStatus*(code: HttpCode): InfluxStatus =
   ## Get InfluxStatus from HTTP response code.
@@ -131,74 +131,74 @@ func toInfluxStatus*(code: HttpCode): InfluxStatus =
   else:
     UnknownError
 
-proc setBasicAuth*(i: InfluxClient, user: string, pwd: string) =
+proc setBasicAuth*(client: InfluxClient, user: string, pwd: string) =
   ## Use Basic authentication.
-  i.auth = "Basic " & encode(user & ":" & pwd)
+  client.auth = "Basic " & encode(user & ":" & pwd)
 
-proc setTokenAuth*(i: InfluxClient, token: string) =
+proc setTokenAuth*(client: InfluxClient, token: string) =
   ## Use Token authentication.
-  i.auth = "Token " & token
+  client.auth = "Token " & token
 
-proc addTag*(l: DataPoint, name: string, value: string) =
+proc addTag*(dp: DataPoint, name: string, value: string) =
   ## Add a measurement tag.
-  l.tags[name] = "\"" & value & "\""
+  dp.tags[name] = "\"" & value & "\""
 
-proc addField*(l: DataPoint, name: string, value: string) =
+proc addField*(dp: DataPoint, name: string, value: string) =
   ## Add a measurement field.
-  l.fields[name] = "\"" & value & "\""
+  dp.fields[name] = "\"" & value & "\""
 
-proc addField*(l: DataPoint, name: string, value: int) =
-  l.fields[name] = $value & "i"
+proc addField*(dp: DataPoint, name: string, value: int) =
+  dp.fields[name] = $value & "i"
 
-proc addField*(l: DataPoint, name: string, value: float) =
-  l.fields[name] = $value
+proc addField*(dp: DataPoint, name: string, value: float) =
+  dp.fields[name] = $value
 
-proc addField*(l: DataPoint, name: string, value: bool) =
-  l.fields[name] = case value:
+proc addField*(dp: DataPoint, name: string, value: bool) =
+  dp.fields[name] = case value:
     of true:
       "t"
     of false:
       "f"
 
-func `$`*(l: DataPoint): string =
-  result = l.measurement
-  for key, val in l.tags:
+func `$`*(dp: DataPoint): string =
+  result = dp.measurement
+  for key, val in dp.tags:
     result.add("," & key & "=" & val)
   result.add(" ")
   var fields = newSeq[string]()
-  for key, val in l.fields:
+  for key, val in dp.fields:
     fields.add(key & "=" & val)
   result.add(fields.join(","))
-  if l.timestamp != 0:
-    result.add(" " & $l.timestamp)
+  if dp.timestamp != 0:
+    result.add(" " & $dp.timestamp)
 
-proc request*(i: InfluxClient | AsyncInfluxClient, endpoint: string,
+proc request*(client: InfluxClient | AsyncInfluxClient, endpoint: string,
               httpMethod = HttpGet, data = "",
               queryString: seq[(string, string)] = @[]):
               Future[Response | AsyncResponse] {.multisync.} =
-  ## Send request to Influx using connection values from `client` directed
+  ## Send request to Influx using connection values from ``client`` directed
   ## at the specified InfluxDB API ``endpoint`` using the method specified by
   ## ``httpMethod``.
   var hostUri = initUri()
-  if i.ssl:
+  if client.ssl:
     hostUri.scheme = "https"
   else:
     hostUri.scheme = "http"
-  hostUri.hostname = i.host
-  hostUri.port = $i.port
+  hostUri.hostname = client.host
+  hostUri.port = $client.port
   hostUri.path = endpoint
   hostUri.query = encodeQuery(queryString)
-  i.httpClient.headers = newHttpHeaders()
-  if i.auth != "":
-    i.httpClient.headers["Authorization"] = i.auth
-  return await i.httpClient.request($hostUri, httpMethod, data)
+  client.httpClient.headers = newHttpHeaders()
+  if client.auth != "":
+    client.httpClient.headers["Authorization"] = client.auth
+  return await client.httpClient.request($hostUri, httpMethod, data)
 
-proc ping*(i: InfluxClient | AsyncInfluxClient):
+proc ping*(client: InfluxClient | AsyncInfluxClient):
            Future[Response | AsyncResponse] {.multisync.} =
   ## Ping InfluxDB to check instance status.
-  return await i.request("/ping", HttpGet)
+  return await client.request("/ping", HttpGet)
 
-proc query*(i: InfluxClient | AsyncInfluxClient, q: string, database = "",
+proc query*(client: InfluxClient | AsyncInfluxClient, q: string, database = "",
             chunked = false, chunkSize = 10000, epoch = "ns", pretty = false):
             Future[Response | AsyncResponse] {.multisync.} =
   ## Query InfluxDB using InfluxQL. HTTP method is automatically determined by
@@ -224,30 +224,30 @@ proc query*(i: InfluxClient | AsyncInfluxClient, q: string, database = "",
     querySeq.add(("chunked", $chunked))
   if database != "":
     querySeq.add(("db", database))
-  elif i.database != "":
-    querySeq.add(("db", i.database))
-  var meth: HttpMethod
+  elif client.database != "":
+    querySeq.add(("db", client.database))
+  var mthd: HttpMethod
   if q.toLowerAscii.startsWith("select") or q.toLowerAscii.startsWith("show"):
-    meth = HttpGet
+    mthd = HttpGet
   else:
-    meth = HttpPost
-  return await i.request("/query", meth, queryString = querySeq)
+    mthd = HttpPost
+  return await client.request("/query", mthd, queryString = querySeq)
 
-proc write*(i: InfluxClient | AsyncInfluxClient, data: string,
+proc write*(client: InfluxClient | AsyncInfluxClient, data: string,
             database: string = ""): Future[Response | AsyncResponse]
             {.multisync.} =
   ## Write data points to InfluxDB using Line Protocol.
   var db: string
   if database != "":
     db = database
-  elif i.database != "":
-    db = i.database
-  return await i.request("/write", HttpPost, data, @[("db", db)])
+  elif client.database != "":
+    db = client.database
+  return await client.request("/write", HttpPost, data, @[("db", db)])
 
-proc write*(i: InfluxClient | AsyncInfluxClient, data: seq[DataPoint],
+proc write*(client: InfluxClient | AsyncInfluxClient, data: seq[DataPoint],
             database = ""): Future[Response | AsyncResponse] {.multisync.} =
-  return await i.write(data.join("\n"), database)
+  return await client.write(data.join("\n"), database)
 
-proc write*(i: InfluxClient | AsyncInfluxClient, data: DataPoint,
+proc write*(client: InfluxClient | AsyncInfluxClient, data: DataPoint,
             database = ""): Future[Response | AsyncResponse] {.multisync.} =
-  return await i.write($data, database)
+  return await client.write($data, database)
