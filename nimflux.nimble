@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.3"
+version       = "1.0.0"
 author        = "Tobias Dély"
 description   = "InfluxDB client library."
 license       = "MIT"

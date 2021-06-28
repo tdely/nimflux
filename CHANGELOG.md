@@ -1,6 +1,24 @@
 Changes
 =======
 
+[1.0.0] - 2021-06-28
+--------------------
+
+### Added
+
+* Asynchronous functionality has been added through `AsyncInfluxClient`.
+* Custom `SslContext` can now be used for HTTP actions.
+* The module now exports some necessary parts from the httpclient module.
+
+### Changed
+
+* The Influx client now has a persistent HTTP client instead of creating a new
+  instance for each request. The proc `close` has been added for closing the
+  internal HTTP client.
+* Requests no longer returns both the HTTP response and the "Influx status",
+  just the HTTP response. The status can be created manually by using the
+  exported `toInfluxStatus` proc.
+
 [0.1.3] - 2021-04-08
 --------------------
 
