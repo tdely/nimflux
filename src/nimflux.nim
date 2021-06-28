@@ -21,8 +21,8 @@
 ##
 
 {.experimental: "strictFuncs".}
-import asyncdispatch, base64, hashes, httpclient, httpcore, strutils, tables,
-       uri
+import asyncdispatch, base64, hashes, httpclient, httpcore, net, strutils,
+       tables, uri
 
 type
   InfluxClientBase*[ClientType] = ref object
@@ -64,8 +64,9 @@ func `$`*(i: InfluxClient): string =
   hostUri.query = encodeQuery(@[("db", i.database)])
   $hostUri
 
-proc newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
-                      timeout = -1): InfluxClient =
+proc newInfluxClient*(host: string, database: string, port = 8086,
+                      ssl: SslContext | bool = false, timeout = -1):
+                      InfluxClient =
   ## Create a new InfluxClient instance for communicating with the InfluxDB API.
   ##
   ## ``host`` specifies the host to target.
@@ -74,7 +75,8 @@ proc newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
   ##
   ## ``port`` specifies the port to target.
   ##
-  ## ``ssl`` specifies the use of HTTPS communication.
+  ## ``ssl`` specifies the use of HTTPS communication. If value is a SslContext
+  ## then that will be used in any HTTPS connection.
   ##
   ## ``timeout`` specifies the number of milliseconds to allow before a
   ## ``TimeoutError`` is raised.
@@ -82,11 +84,15 @@ proc newInfluxClient*(host: string, database: string, port = 8086, ssl = false,
   result.host = host
   result.port = port
   result.database = database
-  result.ssl = ssl
-  result.httpClient = newHttpClient(timeout = timeout)
+  when ssl is bool:
+    result.ssl = ssl
+    result.httpClient = newHttpClient(timeout = timeout)
+  else:
+    result.ssl = true
+    result.httpClient = newHttpClient(timeout = timeout, sslContext = ssl)
 
 proc newAsyncInfluxClient*(host: string, database: string, port = 8086,
-                           ssl = false): AsyncInfluxClient =
+                           ssl: SslContext | bool = false): AsyncInfluxClient =
   ## Create a new AsyncInfluxClient instance for communicating with the
   ## InfluxDB API.
   ##
@@ -96,7 +102,8 @@ proc newAsyncInfluxClient*(host: string, database: string, port = 8086,
   ##
   ## ``port`` specifies the port to target.
   ##
-  ## ``ssl`` specifies the use of HTTPS communication.
+  ## ``ssl`` specifies the use of HTTPS communication. If value is a SslContext
+  ## then that will be used in any HTTPS connection.
   ##
   ## ``timeout`` specifies the number of milliseconds to allow before a
   ## ``TimeoutError`` is raised.
@@ -105,7 +112,12 @@ proc newAsyncInfluxClient*(host: string, database: string, port = 8086,
   result.port = port
   result.database = database
   result.ssl = ssl
-  result.httpClient = newAsyncHttpClient()
+  when ssl is bool:
+    result.ssl = ssl
+    result.httpClient = newAsyncHttpClient()
+  else:
+    result.ssl = true
+    result.httpClient = newAsyncHttpClient(sslContext = ssl)
 
 func close*(client: InfluxClient | AsyncInfluxClient) =
   ## Close any HTTP connection used by the ``client``.
