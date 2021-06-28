@@ -24,6 +24,8 @@
 import asyncdispatch, base64, hashes, httpclient, httpcore, net, strutils,
        tables, uri
 
+export AsyncResponse, Response, body, code
+
 type
   InfluxClientBase*[ClientType] = ref object
     httpClient: ClientType
