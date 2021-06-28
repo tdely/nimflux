@@ -13,11 +13,28 @@
 ##   data.addTag("loc", "home")
 ##   data.addField("ambient", 22.0)
 ##
-##   var client = InfluxClient("localhost", "nimtest")
-##   var (resp, status) = client.write(data)
-##   assert status == Ok
-##   (resp, status) = client.query("select * from temp")
+##   var client = newInfluxClient("localhost", "nimtest")
+##   var resp = client.write(data)
+##   assert resp.code.toInfluxStatus == Ok
+##   resp = client.query("select * from temp")
 ##   echo resp.body
+##
+## It also supports asynchronously actions through ``AsyncInfluxClient``:
+##
+## .. code-block:: Nim
+##   import asyncdispatch, nimflux
+##
+##   var data = DataPoint(measurement: "temp")
+##   data.addTag("loc", "home")
+##   data.addField("ambient", 22.0)
+##
+##   proc asyncProc(data: DataPoint): Future[AsyncResponse] {.async.} =
+##     var client = newAsyncInfluxClient("localhost", "nimtest")
+##     var resp = await client.write(data)
+##     assert resp.code.toInfluxStatus == Ok
+##     return await client.query("select * from temp")
+##
+##   echo asyncProc(data).waitFor().body.waitFor()
 ##
 
 {.experimental: "strictFuncs".}
