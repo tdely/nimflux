@@ -172,7 +172,7 @@ proc setTokenAuth*(client: InfluxClient, token: string) =
 
 proc addTag*(dp: DataPoint, name: string, value: string) =
   ## Add a measurement tag.
-  dp.tags[name] = "\"" & value & "\""
+  dp.tags[name] = value
 
 proc addField*(dp: DataPoint, name: string, value: string) =
   ## Add a measurement field.
