@@ -1,6 +1,13 @@
 Changes
 =======
 
+[1.0.1] - 2021-06-29
+--------------------
+
+### Changed
+
+* Fix value of tags being erroneously quoted.
+
 [1.0.0] - 2021-06-28
 --------------------
 
