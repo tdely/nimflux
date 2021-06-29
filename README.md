@@ -22,7 +22,7 @@ resp = client.query("select * from temp")
 echo resp.body
 ```
 
-It also supports asynchronously actions through `AsyncInfluxClient`:
+It also supports asynchronous actions through `AsyncInfluxClient`:
 
 ```nim
 import asyncdispatch, nimflux
