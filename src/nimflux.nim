@@ -138,7 +138,7 @@ proc newAsyncInfluxClient*(host: string, database: string, port = 8086,
     result.ssl = true
     result.httpClient = newAsyncHttpClient(sslContext = ssl)
 
-func close*(client: InfluxClient | AsyncInfluxClient) =
+proc close*(client: InfluxClient | AsyncInfluxClient) =
   ## Close any HTTP connection used by the ``client``.
   client.httpClient.close()
 
