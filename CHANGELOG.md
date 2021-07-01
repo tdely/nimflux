@@ -1,6 +1,14 @@
 Changes
 =======
 
+[1.0.2] - 2021-07-01
+--------------------
+
+### Changed
+
+* `close` was func instead of proc causing an issue with the `strictFunc` pragma
+  has it may have possible side effects. `close` is now correctly proc.
+
 [1.0.1] - 2021-06-29
 --------------------
 
