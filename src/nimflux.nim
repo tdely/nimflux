@@ -72,7 +72,7 @@ type
     ServerError,
     UnknownError
 
-func `$`*(client: InfluxClient): string =
+func `$`*(client: InfluxClient | AsyncInfluxClient): string =
   var hostUri = initUri()
   if client.ssl:
     hostUri.scheme = "https"
@@ -130,7 +130,6 @@ proc newAsyncInfluxClient*(host: string, database: string, port = 8086,
   result.host = host
   result.port = port
   result.database = database
-  result.ssl = ssl
   when ssl is bool:
     result.ssl = ssl
     result.httpClient = newAsyncHttpClient()
@@ -162,11 +161,11 @@ func toInfluxStatus*(code: HttpCode): InfluxStatus =
   else:
     UnknownError
 
-proc setBasicAuth*(client: InfluxClient, user: string, pwd: string) =
+proc setBasicAuth*(client: InfluxClient | AsyncInfluxClient, user: string, pwd: string) =
   ## Use Basic authentication.
   client.auth = "Basic " & encode(user & ":" & pwd)
 
-proc setTokenAuth*(client: InfluxClient, token: string) =
+proc setTokenAuth*(client: InfluxClient | AsyncInfluxClient, token: string) =
   ## Use Token authentication.
   client.auth = "Token " & token
 

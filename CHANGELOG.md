@@ -1,6 +1,16 @@
 Changes
 =======
 
+[1.0.3] - 2021-11-23
+--------------------
+
+### Changed
+
+* Fixed not being able to pass `SslContext` to `ssl=` in `newAsyncInfluxClient`.
+* Fixed not being able to get a string representation of `AsyncInfluxClient`
+  through `$`.
+* Fixed `setBasicAuth` and `setTokenAuth` not working with `AsyncInfluxClient`.
+
 [1.0.2] - 2021-07-01
 --------------------
 
@@ -63,4 +73,3 @@ Changes
 ### Added
 
 * Initial release
-
