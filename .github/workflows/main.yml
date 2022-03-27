@@ -1,0 +1,27 @@
+name: Test
+on: [push]
+jobs:
+  container-job:
+    #strategy:
+    #  matrix:
+    #    NIM_VERSION: [1.6.4, latest]
+    #    NIM_VERSION: [1.6.4]
+    #    OS_VERSION: [ubuntu]
+
+    runs-on: ubuntu-latest
+    #container: nimlang/nim:${{ matrix.NIM_VERSION }}-${{ matrix.OS_VERSION }}
+    container: nimlang/nim:latest-ubuntu
+    services:
+      influx:
+        image: influxdb:1.8
+        ports:
+          - 8086:8086
+
+    steps:
+    - uses: "actions/checkout@v2"
+    - name: "Test"
+      env:
+        INFLUXDB_HOST: influx
+        INFLUXDB_PORT: 8086
+        INFLUXDB_NAME: nimflux
+      run: testament all
