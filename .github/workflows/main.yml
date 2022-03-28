@@ -1,16 +1,14 @@
 name: Test
 on: [push]
 jobs:
-  container-job:
-    #strategy:
-    #  matrix:
-    #    NIM_VERSION: [1.6.4, latest]
-    #    NIM_VERSION: [1.6.4]
-    #    OS_VERSION: [ubuntu]
+  test:
+    strategy:
+      matrix:
+        NIM_VERSION: [1.6.4, latest]
+        OS_VERSION: [ubuntu]
 
     runs-on: ubuntu-latest
-    #container: nimlang/nim:${{ matrix.NIM_VERSION }}-${{ matrix.OS_VERSION }}
-    container: nimlang/nim:latest-ubuntu
+    container: nimlang/nim:${{ matrix.NIM_VERSION }}-${{ matrix.OS_VERSION }}
     services:
       influx:
         image: influxdb:1.8
